@@ -3,6 +3,41 @@ use std::process::{Command, Stdio};
 use crate::platform::configure_hidden;
 use crate::types::ExecResult;
 
+/// Validates that a package name is safe to use as a command argument
+/// Prevents command injection by restricting to safe characters
+fn validate_package_name(package: &str) -> Result<String, String> {
+    let trimmed = package.trim();
+    
+    if trimmed.is_empty() {
+        return Err("Package name cannot be empty".to_string());
+    }
+    
+    if trimmed.len() > 256 {
+        return Err("Package name too long (max 256 characters)".to_string());
+    }
+    
+    // Allow alphanumeric, hyphens, underscores, slashes (for scoped packages), dots, and @ (for npm scopes)
+    // This covers npm packages like @org/package and git URLs
+    for ch in trimmed.chars() {
+        if !ch.is_ascii_alphanumeric() 
+            && ch != '-' 
+            && ch != '_' 
+            && ch != '/' 
+            && ch != '.' 
+            && ch != '@' 
+            && ch != ':' {
+            return Err(format!("Package name contains invalid character: '{ch}'. Only alphanumeric, -, _, /, ., @, and : are allowed."));
+        }
+    }
+    
+    // Prevent starting with dangerous characters
+    if trimmed.starts_with('-') || trimmed.starts_with('.') {
+        return Err("Package name cannot start with '-' or '.'".to_string());
+    }
+    
+    Ok(trimmed.to_string())
+}
+
 pub fn run_capture_optional(command: &mut Command) -> Result<Option<ExecResult>, String> {
     match command.output() {
         Ok(output) => {
@@ -23,10 +58,13 @@ pub fn run_capture_optional(command: &mut Command) -> Result<Option<ExecResult>,
 }
 
 pub fn opkg_install(project_dir: &str, package: &str) -> Result<ExecResult, String> {
+    // Validate package name for security
+    let safe_package = validate_package_name(package)?;
+    
     let mut opkg = Command::new("opkg");
     configure_hidden(&mut opkg);
     opkg.arg("install")
-        .arg(package)
+        .arg(&safe_package)
         .current_dir(project_dir)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -40,7 +78,7 @@ pub fn opkg_install(project_dir: &str, package: &str) -> Result<ExecResult, Stri
     configure_hidden(&mut openpackage);
     openpackage
         .arg("install")
-        .arg(package)
+        .arg(&safe_package)
         .current_dir(project_dir)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -55,7 +93,7 @@ pub fn opkg_install(project_dir: &str, package: &str) -> Result<ExecResult, Stri
     pnpm.arg("dlx")
         .arg("opkg")
         .arg("install")
-        .arg(package)
+        .arg(&safe_package)
         .current_dir(project_dir)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -69,7 +107,7 @@ pub fn opkg_install(project_dir: &str, package: &str) -> Result<ExecResult, Stri
     configure_hidden(&mut npx);
     npx.arg("opkg")
         .arg("install")
-        .arg(package)
+        .arg(&safe_package)
         .current_dir(project_dir)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())

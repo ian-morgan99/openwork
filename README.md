@@ -188,10 +188,34 @@ WEBKIT_DISABLE_DMABUF_RENDERER=1 openwork
 WEBKIT_DISABLE_COMPOSITING_MODE=1 openwork
 ```
 
+## Security
+
+OpenWork is designed with security as a core principle. Key security features:
+
+- ✅ **Filesystem Protection**: All file operations restricted to explicitly authorized directories
+- ✅ **Input Validation**: Command names, package names, and paths are sanitized
+- ✅ **Path Traversal Prevention**: Zip imports and file operations are protected
+- ✅ **Content Security Policy**: UI protected against XSS attacks
+- ✅ **Secure Process Spawning**: External commands executed safely without shell interpretation
+
+**For Users:**
+- 📖 Read [SECURITY_GUIDE.md](./SECURITY_GUIDE.md) for safety guidelines
+- ⚠️ Only authorize directories you trust
+- ⚠️ Only import workspaces from trusted sources
+
+**For Developers:**
+- 📖 Review [SECURITY.md](./SECURITY.md) for architecture and vulnerability details
+- 📋 Follow [.github/SECURITY_CHECKLIST.md](./.github/SECURITY_CHECKLIST.md) when contributing
+- 🔍 Security scanning runs automatically on all PRs
+
+**Reporting Security Issues:**
+See [SECURITY.md](./SECURITY.md) for responsible disclosure process.
+
 ## Security Notes
 
 - OpenWork hides model reasoning and sensitive tool metadata by default.
 - Host mode binds to `127.0.0.1` by default.
+- Automated dependency vulnerability scanning runs weekly.
 
 ## Contributing
 
